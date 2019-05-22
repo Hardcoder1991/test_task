@@ -59,13 +59,13 @@ class UserRepository extends BaseRepository
         $model->save();
         $model->attachRole($request['role']);
         $data = array();
+        $user_meta = UserMeta::firstOrCreate(['user_id' => $model->id]);
 
         if ($request['role'] == env('CUSTOMER_ROLE_ID')) {
 
-            if($request['consumer_type'] == 'paid')
+            if($request['consumer_type'] == 'paid' && $request['company_id'] == '')
             {
-                if($request['company_id'] == '')
-                {
+                
                     $type = Type::where('code', 'paid')->first();
                     $company = Company::create(['name' => $request['name'], 'type_id' => $type->id, 'additional_info' => 'Created automatically for user ' . $model->id]);
                     $department = Department::create(['name' => $request['name'], 'company_id' => $company->id, 'additional_info' => 'Created automatically for user ' . $model->id]);
@@ -73,10 +73,10 @@ class UserRepository extends BaseRepository
                     $model->company_id = $company->id;
                     $model->department_id = $department->id;
                     $model->save();
-                }
+                
             }
 
-            $user_meta = UserMeta::firstOrCreate(['user_id' => $model->id]);
+            //$user_meta = UserMeta::firstOrCreate(['user_id' => $model->id]);
             $old_meta = $user_meta->toArray();
             $user_meta->consumer_type = $request['consumer_type'];
             $user_meta->customer_type = $request['customer_type'];
@@ -111,8 +111,8 @@ class UserRepository extends BaseRepository
                 foreach ($request['translator_ex'] as $translatorId) {
                     $blacklist = new UsersBlacklist();
                     if ($model->id) {
-                        $already_exist = UsersBlacklist::translatorExist($model->id, $translatorId);
-                        if ($already_exist == 0) {
+                        //$already_exist = UsersBlacklist::translatorExist($model->id, $translatorId);
+                        if (UsersBlacklist::translatorExist($model->id, $translatorId)) {
                             $blacklist->user_id = $model->id;
                             $blacklist->translator_id = $translatorId;
                             $blacklist->save();
@@ -131,7 +131,7 @@ class UserRepository extends BaseRepository
 
         } else if ($request['role'] == env('TRANSLATOR_ROLE_ID')) {
 
-            $user_meta = UserMeta::firstOrCreate(['user_id' => $model->id]);
+            //$user_meta = UserMeta::firstOrCreate(['user_id' => $model->id]);
 
             $user_meta->translator_type = $request['translator_type'];
             $user_meta->worked_for = $request['worked_for'];
@@ -159,8 +159,8 @@ class UserRepository extends BaseRepository
             if ($request['user_language']) {
                 foreach ($request['user_language'] as $langId) {
                     $userLang = new UserLanguages();
-                    $already_exit = $userLang::langExist($model->id, $langId);
-                    if ($already_exit == 0) {
+                   // $already_exit = $userLang::langExist($model->id, $langId);
+                    if (UserLanguages::langExist($model->id, $langId)) {
                         $userLang->user_id = $model->id;
                         $userLang->lang_id = $langId;
                         $userLang->save();
@@ -188,8 +188,8 @@ class UserRepository extends BaseRepository
             $del = DB::table('user_towns')->where('user_id', '=', $model->id)->delete();
             foreach ($request['user_towns_projects'] as $townId) {
                 $userTown = new UserTowns();
-                $already_exit = $userTown::townExist($model->id, $townId);
-                if ($already_exit == 0) {
+                //$already_exit = $userTown::townExist($model->id, $townId);
+                if ($userTown::townExist($model->id, $townId)) {
                     $userTown->user_id = $model->id;
                     $userTown->town_id = $townId;
                     $userTown->save();
